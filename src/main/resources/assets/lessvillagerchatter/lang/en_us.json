@@ -1,0 +1,20 @@
+{
+	"lessvillagerchatter.config.title": "Less Villager Chatter",
+	"lessvillagerchatter.config.villagers": "Villagers: every %s",
+	"lessvillagerchatter.config.traders": "Trader: every %s",
+	"lessvillagerchatter.config.seconds": "~%s s",
+	"lessvillagerchatter.config.vanilla": "~%s s (vanilla)",
+	"lessvillagerchatter.config.interval.tooltip": "Average time between idle \"hmm\" sounds of villagers (left) and the wandering trader (right). Vanilla is about 6 s.",
+	"lessvillagerchatter.config.villager_volume": "Villager volume: %s",
+	"lessvillagerchatter.config.trader_volume": "Trader volume: %s",
+	"lessvillagerchatter.config.volume.tooltip": "Volume of all villager / wandering trader sounds. In worlds you host, everyone hears this. On a server, the server's own setting applies unless \"Use my volume\" is on.",
+	"lessvillagerchatter.config.variation": "Variation: ±%s%%",
+	"lessvillagerchatter.config.variation.tooltip": "Each silence after a \"hmm\" is randomly this much shorter or longer. The average stays the same.",
+	"lessvillagerchatter.config.random_start": "Random start",
+	"lessvillagerchatter.config.random_start.tooltip": "Villagers loaded together start at random points of their cycle, so they don't all \"hmm\" at once. Applies to villagers loaded after the change.",
+	"lessvillagerchatter.config.own_volume": "Use my volume on every server",
+	"lessvillagerchatter.config.own_volume.tooltip": "ON: you hear villagers and traders at the volumes above on any server, even one without this mod. OFF: you hear the volume the server sends.",
+	"lessvillagerchatter.config.note": "Changes apply right away. Hover over a setting for details.",
+	"lessvillagerchatter.config.reset": "Reset to Defaults",
+	"modmenu.descriptionTranslation.lessvillagerchatter": "Villagers and wandering traders make their idle \"hmm\" sound less often, and optionally quieter. Server-side: players can join with a vanilla client."
+}

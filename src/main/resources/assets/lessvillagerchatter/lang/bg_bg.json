@@ -1,0 +1,20 @@
+{
+	"lessvillagerchatter.config.title": "Less Villager Chatter",
+	"lessvillagerchatter.config.villagers": "Селяни: на %s",
+	"lessvillagerchatter.config.traders": "Търговец: на %s",
+	"lessvillagerchatter.config.seconds": "~%s сек.",
+	"lessvillagerchatter.config.vanilla": "~%s сек. (ванила)",
+	"lessvillagerchatter.config.interval.tooltip": "Средно време между две \"хм\"-кания на селяните (вляво) и на странстващия търговец (вдясно). Във ванила е около 6 сек.",
+	"lessvillagerchatter.config.villager_volume": "Сила селяни: %s",
+	"lessvillagerchatter.config.trader_volume": "Сила търговец: %s",
+	"lessvillagerchatter.config.volume.tooltip": "Сила на всички звуци на селяните / търговеца. В световете, които стартираш ти, всички чуват това. На сървър важи настройката на сървъра, освен ако \"Моята сила\" е включена.",
+	"lessvillagerchatter.config.variation": "Разброс: ±%s%%",
+	"lessvillagerchatter.config.variation.tooltip": "Всяка пауза след \"хм\" е случайно с толкова по-къса или по-дълга. Средното остава същото.",
+	"lessvillagerchatter.config.random_start": "Случаен старт",
+	"lessvillagerchatter.config.random_start.tooltip": "Селяните, заредени заедно, започват от случайна точка в цикъла си и не \"хм\"-кат едновременно. Важи за селяни, заредени след промяната.",
+	"lessvillagerchatter.config.own_volume": "Моята сила на всеки сървър",
+	"lessvillagerchatter.config.own_volume.tooltip": "ВКЛ: чуваш селяните и търговеца с горната сила на всеки сървър, дори без този мод. ИЗКЛ: чуваш силата, която праща сървърът.",
+	"lessvillagerchatter.config.note": "Промените важат веднага. Задръж мишката над настройка за подробности.",
+	"lessvillagerchatter.config.reset": "По подразбиране",
+	"modmenu.descriptionTranslation.lessvillagerchatter": "Селяните и странстващите търговци \"хм\"-кат по-рядко и по желание по-тихо. Работи на сървъра: играчите влизат с чист vanilla клиент."
+}

@@ -1,0 +1,80 @@
+plugins {
+	id 'net.fabricmc.fabric-loom' version "${loom_version}"
+}
+
+base {
+	archivesName = 'less-villager-chatter'
+}
+
+repositories {
+	maven {
+		name = 'TerraformersMC'
+		url = 'https://maven.terraformersmc.com/releases/'
+	}
+}
+
+loom {
+	splitEnvironmentSourceSets()
+
+	mods {
+		"lessvillagerchatter" {
+			sourceSet sourceSets.main
+			sourceSet sourceSets.client
+		}
+	}
+}
+
+fabricApi {
+	configureTests {
+		createSourceSet = true
+		modId = "lessvillagerchatter-test"
+		enableGameTests = false
+		enableClientGameTests = true
+		eula = true
+	}
+}
+
+dependencies {
+	minecraft "com.mojang:minecraft:${project.minecraft_version}"
+	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+
+	// Compile only: Loom injects Fabric API interfaces into Minecraft classes once Fabric API is on any
+	// classpath (it is for the game test), and javac then needs them. The mod does not use or need Fabric API.
+	compileOnly "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+	clientCompileOnly "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+
+	// Optional: Mod Menu shows the config screen button. Not bundled, not required.
+	clientCompileOnly "com.terraformersmc:modmenu:${project.modmenu_version}"
+
+	// Client game test only (./gradlew runClientGameTest); the mod itself needs neither.
+	gametestImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+	gametestImplementation "com.terraformersmc:modmenu:${project.modmenu_version}"
+
+	// Dev client (./gradlew runClient) gets Mod Menu so the config screen can be opened.
+	localRuntime "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+	localRuntime "com.terraformersmc:modmenu:${project.modmenu_version}"
+}
+
+processResources {
+	def version = project.version
+	inputs.property "version", version
+
+	filesMatching("fabric.mod.json") {
+		expand "version": version
+	}
+}
+
+tasks.withType(JavaCompile).configureEach {
+	it.options.release = 25
+}
+
+java {
+	sourceCompatibility = JavaVersion.VERSION_25
+	targetCompatibility = JavaVersion.VERSION_25
+}
+
+jar {
+	from("LICENSE.md") {
+		rename { "LICENSE_less-villager-chatter.md" }
+	}
+}

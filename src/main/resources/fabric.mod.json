@@ -1,0 +1,41 @@
+{
+	"schemaVersion": 1,
+	"id": "lessvillagerchatter",
+	"version": "${version}",
+	"name": "Less Villager Chatter",
+	"description": "Villagers and wandering traders make their idle 'hmm' sound less often. Works on a dedicated server with vanilla clients; in singleplayer the intervals can be changed with sliders (via Mod Menu).",
+	"authors": [
+		"ValcheffNet"
+	],
+	"contact": {
+		"homepage": "https://modrinth.com/mod/less-villager-chatter",
+		"sources": "https://github.com/valcheffnet/less-villager-chatter",
+		"issues": "https://github.com/valcheffnet/less-villager-chatter/issues"
+	},
+	"license": "LicenseRef-All-Rights-Reserved",
+	"icon": "assets/lessvillagerchatter/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"net.valcheff.lessvillagerchatter.LessVillagerChatter"
+		],
+		"modmenu": [
+			"net.valcheff.lessvillagerchatter.client.ModMenuIntegration"
+		]
+	},
+	"mixins": [
+		"lessvillagerchatter.mixins.json",
+		{
+			"config": "lessvillagerchatter.client.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.19.0",
+		"minecraft": "~26.3",
+		"java": ">=25"
+	},
+	"suggests": {
+		"modmenu": "*"
+	}
+}

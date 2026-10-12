@@ -40,4 +40,5 @@ replay_*.log
 *.jfr
 
 # local only
+build-log*.txt
 art/source-screenshot.png

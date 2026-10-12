@@ -1,0 +1,16 @@
+{
+  "published": {
+    "1.0.0": {
+      "curseforge": true,
+      "github": true,
+      "modrinth": true,
+      "type": "release"
+    },
+    "1.0.1": {
+      "curseforge": true,
+      "github": true,
+      "modrinth": true,
+      "type": "release"
+    }
+  }
+}

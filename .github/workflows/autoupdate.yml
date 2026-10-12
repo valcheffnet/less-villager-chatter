@@ -1,0 +1,158 @@
+# Daily: if a new stable Minecraft is out, bump versions, build, run the in-game test, let Claude fix the
+# code if needed, then publish to GitHub Releases, Modrinth and CurseForge. Also publishes any version in
+# gradle.properties that is not out yet (e.g. after a manual bump).
+#
+# Deliberately uses no third-party or versioned actions, only shell, git, curl, python3 and gh from the
+# runner image, so it keeps working for years without maintenance.
+#
+# Secrets: MODRINTH_TOKEN, CURSEFORGE_TOKEN, ANTHROPIC_API_KEY (optional; without it there is no auto-fix).
+
+name: Auto update
+
+on:
+  schedule:
+    - cron: "17 4 * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Build and test only: no commits, no publishing"
+        type: boolean
+        default: false
+      force_build:
+        description: "Build and test even if nothing changed"
+        type: boolean
+        default: false
+  push:
+    branches: [main]
+    paths: [gradle.properties]
+
+permissions:
+  contents: write
+  issues: write
+  actions: write
+
+concurrency:
+  group: autoupdate
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    env:
+      GH_TOKEN: ${{ github.token }}
+      CI: "true"
+      DRY_RUN: ${{ inputs.dry_run == true }}
+      FORCE_BUILD: ${{ inputs.force_build == true }}
+      HAS_AI: ${{ secrets.ANTHROPIC_API_KEY != '' }}
+    steps:
+      - name: Check out
+        run: |
+          git clone --depth 200 "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" .
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Look for a new Minecraft release
+        id: bump
+        run: python3 scripts/autoupdate.py bump | tee -a "$GITHUB_OUTPUT"
+
+      - name: Decide what to do
+        id: needs
+        run: python3 scripts/autoupdate.py needs | tee -a "$GITHUB_OUTPUT"
+
+      - name: Install JDK and a headless display
+        if: steps.needs.outputs.build == 'true'
+        run: |
+          JAVA=$(python3 scripts/autoupdate.py prop java_version)
+          mkdir -p "$RUNNER_TEMP/jdk"
+          curl -fsSL "https://api.adoptium.net/v3/binary/latest/${JAVA}/ga/linux/x64/jdk/hotspot/normal/eclipse" \
+            | tar -xz -C "$RUNNER_TEMP/jdk" --strip-components=1
+          echo "JAVA_HOME=$RUNNER_TEMP/jdk" >> "$GITHUB_ENV"
+          echo "$RUNNER_TEMP/jdk/bin" >> "$GITHUB_PATH"
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq xvfb libgl1-mesa-dri > /dev/null
+          chmod +x gradlew
+
+      - name: Build and run the game test
+        id: test
+        if: steps.needs.outputs.build == 'true'
+        continue-on-error: true
+        run: xvfb-run -a ./gradlew build runClientGameTest --no-daemon --console=plain 2>&1 | tee build-log.txt
+
+      - name: Let Claude fix the build
+        id: fix
+        if: >-
+          steps.test.outcome == 'failure' && steps.bump.outputs.result == 'bumped'
+          && env.HAS_AI == 'true' && steps.needs.outputs.ai_allowed == 'true'
+        continue-on-error: true
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GH_TOKEN: ""
+        run: |
+          npm install -g @anthropic-ai/claude-code > /dev/null
+          claude -p "$(cat .github/autofix-prompt.md)" \
+            --allowedTools "Read" "Edit" "Write" "Glob" "Grep" "WebFetch" \
+              "Bash(./gradlew:*)" "Bash(xvfb-run:*)" "Bash(javap:*)" "Bash(unzip:*)" "Bash(find:*)" \
+              "Bash(ls:*)" "Bash(grep:*)" "Bash(cat:*)" "Bash(head:*)" "Bash(tail:*)" "Bash(git diff:*)" "Bash(git status:*)" \
+            --permission-mode acceptEdits --max-turns 120 2>&1 | tail -80
+          python3 scripts/autoupdate.py check-fix
+
+      - name: Test again after the fix
+        id: retest
+        if: steps.fix.outcome == 'success'
+        continue-on-error: true
+        run: xvfb-run -a ./gradlew build runClientGameTest --no-daemon --console=plain 2>&1 | tee build-log-2.txt
+
+      - name: Commit the update
+        id: commit
+        if: >-
+          steps.bump.outputs.result == 'bumped' && env.DRY_RUN != 'true'
+          && (steps.test.outcome == 'success' || steps.retest.outcome == 'success')
+        run: |
+          # A version Claude had to fix goes out as beta; a clean bump as a normal release.
+          if [ "${{ steps.test.outcome }}" = "success" ]; then KIND=release; else KIND=beta; fi
+          python3 scripts/autoupdate.py set-type "$KIND"
+          git add -A -- . ':!build-log*.txt'
+          git commit -m "Update to Minecraft ${{ steps.bump.outputs.minecraft }}"
+          git push origin HEAD:main
+
+      - name: Report a failed update
+        if: >-
+          steps.bump.outputs.result == 'bumped' && env.DRY_RUN != 'true'
+          && steps.commit.outcome != 'success'
+        env:
+          AI_RAN: ${{ steps.fix.outcome == 'success' || steps.fix.outcome == 'failure' }}
+        run: python3 scripts/autoupdate.py report-failure
+
+      - name: Publish
+        if: >-
+          steps.needs.outputs.build == 'true' && env.DRY_RUN != 'true'
+          && (steps.test.outcome == 'success' || steps.retest.outcome == 'success')
+          && (steps.bump.outputs.result != 'bumped' || steps.commit.outcome == 'success')
+        env:
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+          CURSEFORGE_TOKEN: ${{ secrets.CURSEFORGE_TOKEN }}
+        run: |
+          python3 scripts/publish.py || STATUS=$?
+          # Record whatever got published, even if a later target failed; tomorrow's run continues from there.
+          git add .github/autoupdate-state.json
+          git diff --cached --quiet || { git commit -m "Record published files"; git push origin HEAD:main; }
+          exit ${STATUS:-0}
+
+      - name: Keep the schedule alive
+        if: always() && env.DRY_RUN != 'true'
+        run: |
+          # GitHub disables scheduled workflows in public repos after 60 days without activity.
+          git checkout -- . 2>/dev/null || true
+          if python3 scripts/autoupdate.py keepalive | grep -q "heartbeat=true"; then
+            git add .github/autoupdate-state.json
+            git commit -m "Heartbeat: auto-update is still running"
+            git push origin HEAD:main
+          fi
+          gh workflow enable autoupdate.yml || true
+
+      - name: Fail the run if the update did not go through
+        if: >-
+          steps.bump.outputs.result == 'bumped' && env.DRY_RUN != 'true'
+          && steps.commit.outcome != 'success'
+        run: exit 1

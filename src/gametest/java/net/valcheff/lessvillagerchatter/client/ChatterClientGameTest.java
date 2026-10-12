@@ -1,6 +1,5 @@
 package net.valcheff.lessvillagerchatter.client;
 
-import com.terraformersmc.modmenu.api.ModMenuApi;
 import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest;
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext;
 import net.fabricmc.fabric.api.client.gametest.v1.context.TestSingleplayerContext;
@@ -94,8 +93,7 @@ public class ChatterClientGameTest implements FabricClientGameTest {
 			check(fixedPhase == 0, "random start off, phase should be 0, got " + fixedPhase);
 			ChatterConfig.randomStart = true;
 
-			// Open the screen the same way Mod Menu does.
-			context.setScreen(() -> new ModMenuIntegration().getModConfigScreenFactory().create(null));
+			context.setScreen(() -> new ChatterConfigScreen(null));
 			context.waitForScreen(ChatterConfigScreen.class);
 			context.takeScreenshot("lvc-config-default");
 
@@ -122,9 +120,6 @@ public class ChatterClientGameTest implements FabricClientGameTest {
 			check(ChatterConfig.traderInterval == ChatterConfig.DEFAULT_TRADER, "reset trader " + ChatterConfig.traderInterval);
 			context.clickScreenButton("gui.done");
 
-			context.setScreen(() -> ModMenuApi.createModsScreen(null));
-			context.waitTicks(5);
-			context.takeScreenshot("lvc-modmenu-list");
 			context.setScreen(() -> null);
 		}
 	}

@@ -58,7 +58,7 @@ With the mod on your client, turn on "Use my volume on every server". From then 
 
 ## Requirements
 
-- Minecraft 26.3
+- Minecraft 26.3 or newer. Builds for new Minecraft releases are made and published automatically, usually within a few days. Pick the file that matches your game version.
 - Fabric Loader 0.19 or newer, Java 25
 - Fabric API is not needed
 - Mod Menu is optional, only for the settings screen

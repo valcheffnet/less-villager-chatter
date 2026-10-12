@@ -46,35 +46,54 @@ dependencies {
 	// Optional: Mod Menu shows the config screen button. Not bundled, not required.
 	clientCompileOnly "com.terraformersmc:modmenu:${project.modmenu_version}"
 
-	// Client game test only (./gradlew runClientGameTest); the mod itself needs neither.
+	// Client game test only (./gradlew runClientGameTest). No Mod Menu here: it often ships days after a new
+	// Minecraft release and must not block automatic updates.
 	gametestImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
-	gametestImplementation "com.terraformersmc:modmenu:${project.modmenu_version}"
 
 	// Dev client (./gradlew runClient) gets Mod Menu so the config screen can be opened.
 	localRuntime "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
 	localRuntime "com.terraformersmc:modmenu:${project.modmenu_version}"
 }
 
-processResources {
-	def version = project.version
-	inputs.property "version", version
+// Versions live in gradle.properties; scripts/autoupdate.py bumps them for new Minecraft releases.
+def templateProps = [
+	version          : project.version,
+	minecraft_version: project.minecraft_version,
+	java_version     : project.java_version,
+]
 
-	filesMatching("fabric.mod.json") {
-		expand "version": version
+processResources {
+	inputs.properties templateProps
+	filesMatching(["fabric.mod.json", "*.mixins.json"]) {
+		expand templateProps
+	}
+}
+
+processClientResources {
+	inputs.properties templateProps
+	filesMatching("*.mixins.json") {
+		expand templateProps
 	}
 }
 
 tasks.withType(JavaCompile).configureEach {
-	it.options.release = 25
+	it.options.release = project.java_version as int
 }
 
 java {
-	sourceCompatibility = JavaVersion.VERSION_25
-	targetCompatibility = JavaVersion.VERSION_25
+	sourceCompatibility = JavaVersion.toVersion(project.java_version)
+	targetCompatibility = JavaVersion.toVersion(project.java_version)
 }
 
 jar {
 	from("LICENSE.md") {
 		rename { "LICENSE_less-villager-chatter.md" }
+	}
+}
+
+// Headless CI (xvfb) can trip the game test's network synchronizer; Fabric's docs recommend disabling it there.
+if (System.getenv("CI") != null) {
+	tasks.matching { it.name == "runClientGameTest" }.configureEach {
+		jvmArgs "-Dfabric.client.gametest.disableNetworkSynchronizer=true"
 	}
 }

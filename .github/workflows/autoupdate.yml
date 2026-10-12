@@ -60,7 +60,7 @@ jobs:
         id: needs
         run: python3 scripts/autoupdate.py needs | tee -a "$GITHUB_OUTPUT"
 
-      - name: Install JDK and a headless display
+      - name: Install JDK and a software renderer
         if: steps.needs.outputs.build == 'true'
         run: |
           JAVA=$(python3 scripts/autoupdate.py prop java_version)
@@ -70,7 +70,7 @@ jobs:
           echo "JAVA_HOME=$RUNNER_TEMP/jdk" >> "$GITHUB_ENV"
           echo "$RUNNER_TEMP/jdk/bin" >> "$GITHUB_PATH"
           sudo apt-get update -qq
-          sudo apt-get install -y -qq xvfb libgl1-mesa-dri > /dev/null
+          sudo apt-get install -y -qq mesa-vulkan-drivers > /dev/null
           chmod +x gradlew scripts/gametest.sh
 
       - name: Build and run the game test

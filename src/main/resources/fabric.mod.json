@@ -5,7 +5,7 @@
 	"name": "Less Villager Chatter",
 	"description": "Villagers and wandering traders make their idle 'hmm' sound less often. Works on a dedicated server with vanilla clients; in singleplayer the intervals can be changed with sliders (via Mod Menu).",
 	"authors": [
-		"ValcheffNet"
+		"SasnycoN"
 	],
 	"contact": {
 		"homepage": "https://modrinth.com/mod/less-villager-chatter",

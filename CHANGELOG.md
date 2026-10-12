@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.1
+
+- Author name changed to SasnycoN. No gameplay changes.
+
 ## 1.0.0
 
 First release, for Minecraft 26.3 on Fabric.

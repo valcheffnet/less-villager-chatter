@@ -1,7 +1,7 @@
 # License
 
 Less Villager Chatter
-Copyright (c) 2026 ValcheffNet. All rights reserved.
+Copyright (c) 2026 SasnycoN. All rights reserved.
 
 This is not an open source license. The source code is public so you can read it and report bugs, but the mod and its code stay the property of the author.
 

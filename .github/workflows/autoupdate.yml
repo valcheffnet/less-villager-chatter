@@ -71,13 +71,13 @@ jobs:
           echo "$RUNNER_TEMP/jdk/bin" >> "$GITHUB_PATH"
           sudo apt-get update -qq
           sudo apt-get install -y -qq xvfb libgl1-mesa-dri > /dev/null
-          chmod +x gradlew
+          chmod +x gradlew scripts/gametest.sh
 
       - name: Build and run the game test
         id: test
         if: steps.needs.outputs.build == 'true'
         continue-on-error: true
-        run: xvfb-run -a ./gradlew build runClientGameTest --no-daemon --console=plain 2>&1 | tee build-log.txt
+        run: scripts/gametest.sh 2>&1 | tee build-log.txt
 
       - name: Let Claude fix the build
         id: fix
@@ -92,7 +92,7 @@ jobs:
           npm install -g @anthropic-ai/claude-code > /dev/null
           claude -p "$(cat .github/autofix-prompt.md)" \
             --allowedTools "Read" "Edit" "Write" "Glob" "Grep" "WebFetch" \
-              "Bash(./gradlew:*)" "Bash(xvfb-run:*)" "Bash(javap:*)" "Bash(unzip:*)" "Bash(find:*)" \
+              "Bash(./gradlew:*)" "Bash(scripts/gametest.sh)" "Bash(javap:*)" "Bash(unzip:*)" "Bash(find:*)" \
               "Bash(ls:*)" "Bash(grep:*)" "Bash(cat:*)" "Bash(head:*)" "Bash(tail:*)" "Bash(git diff:*)" "Bash(git status:*)" \
             --permission-mode acceptEdits --max-turns 120 2>&1 | tail -80
           python3 scripts/autoupdate.py check-fix
@@ -101,7 +101,7 @@ jobs:
         id: retest
         if: steps.fix.outcome == 'success'
         continue-on-error: true
-        run: xvfb-run -a ./gradlew build runClientGameTest --no-daemon --console=plain 2>&1 | tee build-log-2.txt
+        run: scripts/gametest.sh 2>&1 | tee build-log-2.txt
 
       - name: Commit the update
         id: commit

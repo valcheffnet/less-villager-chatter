@@ -21,5 +21,5 @@ Rules:
   under the newest version, and keep everything else working.
 
 Verify with:
-  xvfb-run -a ./gradlew build runClientGameTest --no-daemon --console=plain
+  scripts/gametest.sh
 and stop once it passes. Do not commit or push; the workflow does that after re-running the test itself.

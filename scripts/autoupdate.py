@@ -115,6 +115,9 @@ def bump_patch(version):
 
 def cmd_bump():
     props = read_props()
+    if os.environ.get("SIMULATE_FROM"):  # workflow test: behave as if the mod were still on an older release
+        write_props({"minecraft_version": os.environ["SIMULATE_FROM"]})
+        props = read_props()
     current = props["minecraft_version"]
     latest = next(v["version"] for v in http_json("https://meta.fabricmc.net/v2/versions/game") if v["stable"])
     if latest == current:

@@ -22,6 +22,10 @@ on:
         description: "Build and test even if nothing changed"
         type: boolean
         default: false
+      simulate_from:
+        description: "Test only: pretend the mod is on this older Minecraft version (forces a dry run)"
+        type: string
+        default: ""
   push:
     branches: [main]
     paths: [gradle.properties]
@@ -42,7 +46,8 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       CI: "true"
-      DRY_RUN: ${{ inputs.dry_run == true }}
+      DRY_RUN: ${{ inputs.dry_run == true || inputs.simulate_from != '' }}
+      SIMULATE_FROM: ${{ inputs.simulate_from }}
       FORCE_BUILD: ${{ inputs.force_build == true }}
       HAS_AI: ${{ secrets.ANTHROPIC_API_KEY != '' }}
     steps:

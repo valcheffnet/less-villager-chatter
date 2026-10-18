@@ -26,7 +26,7 @@ Other mobs are left alone. Work sounds and the yes/no sounds while trading still
 
 ## Singleplayer
 
-Install [Mod Menu](https://modrinth.com/mod/modmenu), open Mods, select Less Villager Chatter and press the settings button. Changes apply right away. Without Mod Menu the mod works the same and reads its config file.
+On NeoForge, open Mods, select Less Villager Chatter and press Config. On Fabric, install [Mod Menu](https://modrinth.com/mod/modmenu) first, then do the same through its Mods screen. Changes apply right away. Without a settings screen the mod works the same and reads its config file.
 
 ![Settings screen](art/config-screen.png)
 
@@ -59,17 +59,20 @@ With the mod on your client, turn on "Use my volume on every server". From then 
 ## Requirements
 
 - Minecraft 26.3
-- Fabric Loader 0.19 or newer, Java 25
-- Fabric API is not needed
-- Mod Menu is optional, only for the settings screen
+- Fabric: Fabric Loader 0.19 or newer. Fabric API is not needed. Mod Menu is optional, only for the settings screen.
+- NeoForge: NeoForge 26.3.0.90 or newer.
+- Java 25
 
 ## Building from source
 
 ```
 ./gradlew build
+./gradlew -p neoforge build
 ```
 
-The jar ends up in `build/libs`. `./gradlew runClientGameTest` starts a real client, creates a singleplayer world and checks the mod in it.
+The Fabric jar ends up in `build/libs`, the NeoForge jar in `neoforge/build/libs`. Both are built from the same sources.
+`./gradlew runClientGameTest` starts a real Fabric client, creates a singleplayer world and checks the mod in it.
+`./gradlew -p neoforge runSmokeTest` starts a NeoForge dedicated server, checks the mod and exits.
 
 ## License
 

@@ -1,0 +1,115 @@
+plugins {
+	id 'java-library'
+	id 'net.neoforged.moddev' version "${moddev_version}"
+}
+
+// The NeoForge jar is built from the same sources as the Fabric one (../src). Only the entrypoints in
+// src/main/java here are NeoForge specific. Versions come from the Fabric build's gradle.properties.
+def shared = new Properties()
+file('../gradle.properties').withInputStream { shared.load(it) }
+
+version = shared.version
+group = shared.group
+
+base {
+	archivesName = 'less-villager-chatter-neoforge'
+}
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(shared.java_version as int)
+
+sourceSets {
+	main {
+		java {
+			srcDir '../src/main/java'
+			srcDir '../src/client/java'
+			// Fabric-only entrypoints
+			exclude 'net/valcheff/lessvillagerchatter/LessVillagerChatter.java'
+			exclude 'net/valcheff/lessvillagerchatter/client/ModMenuIntegration.java'
+		}
+		resources {
+			srcDir '../src/main/resources'
+			srcDir '../src/client/resources'
+			exclude 'fabric.mod.json'
+		}
+	}
+	// A second mod, loaded only by runSmokeTest: starts a dedicated server, checks the mixins, then exits.
+	smoketest {
+		compileClasspath += main.output
+		runtimeClasspath += main.output
+	}
+}
+
+neoForge {
+	version = project.neo_version
+
+	addModdingDependenciesTo sourceSets.smoketest
+
+	mods {
+		lessvillagerchatter {
+			sourceSet sourceSets.main
+		}
+		lessvillagerchattertest {
+			sourceSet sourceSets.smoketest
+		}
+	}
+
+	runs {
+		client {
+			client()
+		}
+		server {
+			server()
+			programArgument '--nogui'
+		}
+		smokeTest {
+			server()
+			programArgument '--nogui'
+			gameDirectory = project.file('run-smoketest')
+			loadedMods = [mods.lessvillagerchatter, mods.lessvillagerchattertest]
+		}
+	}
+}
+
+def templateProps = [
+	version          : shared.version,
+	minecraft_version: shared.minecraft_version,
+	java_version     : shared.java_version,
+	neo_version      : project.neo_version,
+]
+
+var generateModMetadata = tasks.register('generateModMetadata', ProcessResources) {
+	inputs.properties templateProps
+	expand templateProps
+	from 'src/main/templates'
+	into 'build/generated/sources/modMetadata'
+}
+sourceSets.main.resources.srcDir generateModMetadata
+neoForge.ideSyncTask generateModMetadata
+
+processResources {
+	inputs.properties templateProps
+	filesMatching('*.mixins.json') {
+		expand templateProps
+	}
+}
+
+def smokeTestDir = project.file('run-smoketest')
+tasks.named('prepareSmokeTestRun') {
+	doFirst {
+		def dir = smokeTestDir
+		dir.mkdirs()
+		new File(dir, 'eula.txt').text = 'eula=true\n'
+		new File(dir, 'server.properties').text = 'online-mode=false\nspawn-protection=0\n'
+	}
+}
+
+tasks.withType(JavaCompile).configureEach {
+	options.encoding = 'UTF-8'
+	options.release = shared.java_version as int
+}
+
+jar {
+	from('../LICENSE.md') {
+		rename { 'LICENSE_less-villager-chatter.md' }
+	}
+}

@@ -1,0 +1,9 @@
+license="All Rights Reserved"
+
+[[mods]]
+modId="lessvillagerchattertest"
+version="1.0.0"
+displayName="Less Villager Chatter (smoke test)"
+description='''
+Test only. Checks the mod on a dedicated server and exits.
+'''

@@ -5,6 +5,9 @@
 	"name": "Less Villager Chatter (tests)",
 	"environment": "*",
 	"entrypoints": {
+		"client": [
+			"net.valcheff.lessvillagerchatter.client.TestWindow"
+		],
 		"fabric-client-gametest": [
 			"net.valcheff.lessvillagerchatter.client.ChatterClientGameTest"
 		]

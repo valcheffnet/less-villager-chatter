@@ -1,0 +1,33 @@
+license="All Rights Reserved"
+issueTrackerURL="https://github.com/valcheffnet/less-villager-chatter/issues"
+
+[[mods]]
+modId="lessvillagerchatter"
+version="${version}"
+displayName="Less Villager Chatter"
+displayURL="https://modrinth.com/mod/less-villager-chatter"
+logoFile="assets/lessvillagerchatter/icon.png"
+authors="SasnycoN"
+description='''
+Villagers and wandering traders make their idle "hmm" sound less often, and quieter if you want. Works on a dedicated server with vanilla clients; in singleplayer the settings are under Mods > Config.
+'''
+
+[[mixins]]
+config="lessvillagerchatter.mixins.json"
+
+[[mixins]]
+config="lessvillagerchatter.client.mixins.json"
+
+[[dependencies.lessvillagerchatter]]
+modId="neoforge"
+type="required"
+versionRange="[${neo_version},)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.lessvillagerchatter]]
+modId="minecraft"
+type="required"
+versionRange="[${minecraft_version}]"
+ordering="NONE"
+side="BOTH"

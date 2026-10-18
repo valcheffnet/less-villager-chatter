@@ -1,7 +1,5 @@
 package net.valcheff.lessvillagerchatter;
 
-import net.fabricmc.loader.api.FabricLoader;
-
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
@@ -9,9 +7,15 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Properties;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 // config/lessvillagerchatter.properties. Read once at startup; the config screen changes the values live and saves.
 // Average gap between idle sounds is roughly (interval + 40) / 20 seconds; vanilla interval is 80 (~6 s).
+// Loader independent: the Fabric and NeoForge entrypoints pass in the config folder before calling load().
 public final class ChatterConfig {
+	public static final String MOD_ID = "lessvillagerchatter";
+	public static final Logger LOG = LoggerFactory.getLogger(MOD_ID);
 	public static final int VANILLA = 80;
 	public static final int DEFAULT_VILLAGER = 400;
 	public static final int DEFAULT_TRADER = 160;
@@ -33,11 +37,13 @@ public final class ChatterConfig {
 	/** Client only: hear villagers / traders at the volumes above on any server, instead of what the server sends. */
 	public static volatile boolean useOwnVolume = false;
 
+	private static Path configDir = Path.of("config");
+
 	private ChatterConfig() {
 	}
 
 	public static Path file() {
-		return FabricLoader.getInstance().getConfigDir().resolve(LessVillagerChatter.MOD_ID + ".properties");
+		return configDir.resolve(MOD_ID + ".properties");
 	}
 
 	/** Average seconds between idle sounds for a given interval in ticks. */
@@ -55,14 +61,15 @@ public final class ChatterConfig {
 		return interval + interval * variation / 100;
 	}
 
-	public static void load() {
+	public static void load(Path dir) {
+		configDir = dir;
 		Path file = file();
 		Properties props = new Properties();
 		if (Files.exists(file)) {
 			try (Reader r = Files.newBufferedReader(file)) {
 				props.load(r);
 			} catch (IOException e) {
-				LessVillagerChatter.LOG.warn("Could not read {}, using defaults", file, e);
+				LOG.warn("Could not read {}, using defaults", file, e);
 			}
 		}
 
@@ -76,6 +83,8 @@ public final class ChatterConfig {
 
 		// Rewrite so files from older versions gain the new keys.
 		save();
+		LOG.info("Idle sound interval: villagers {} ticks, wandering traders {} ticks (vanilla {}), random start {}, variation {}%",
+				villagerInterval, traderInterval, VANILLA, randomStart, variation);
 	}
 
 	public static void save() {
@@ -103,7 +112,7 @@ public final class ChatterConfig {
 				w.write("useOwnVolume=" + useOwnVolume + "\n");
 			}
 		} catch (IOException e) {
-			LessVillagerChatter.LOG.warn("Could not write {}", file, e);
+			LOG.warn("Could not write {}", file, e);
 		}
 	}
 
@@ -115,7 +124,7 @@ public final class ChatterConfig {
 			if (v >= min && v <= max) return v;
 		} catch (NumberFormatException ignored) {
 		}
-		LessVillagerChatter.LOG.warn("Invalid {}={} (allowed {}..{}), using {}", key, raw, min, max, fallback);
+		LOG.warn("Invalid {}={} (allowed {}..{}), using {}", key, raw, min, max, fallback);
 		return fallback;
 	}
 }

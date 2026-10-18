@@ -1,10 +1,10 @@
 package net.valcheff.lessvillagerchatter.client;
 
-import com.terraformersmc.modmenu.api.ModMenuApi;
 import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest;
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext;
 import net.fabricmc.fabric.api.client.gametest.v1.context.TestSingleplayerContext;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.LivingEntity;
@@ -21,6 +21,11 @@ import java.util.IntSummaryStatistics;
 public class ChatterClientGameTest implements FabricClientGameTest {
 	@Override
 	public void runTest(ClientGameTestContext context) {
+		// Silent: the test window opens on the desktop. TestWindow moves it to ERRANDS_TEST_WINDOW.
+		context.runOnClient(mc -> {
+			mc.options.getSoundSourceOptionInstance(SoundSource.MASTER).set(0.0);
+			mc.options.save();
+		});
 		try (TestSingleplayerContext singleplayer = context.worldBuilder().create()) {
 			int[] start = intervals(singleplayer);
 			// With variation on, getAmbientSoundInterval() reports the longest silence.
@@ -94,8 +99,7 @@ public class ChatterClientGameTest implements FabricClientGameTest {
 			check(fixedPhase == 0, "random start off, phase should be 0, got " + fixedPhase);
 			ChatterConfig.randomStart = true;
 
-			// Open the screen the same way Mod Menu does.
-			context.setScreen(() -> new ModMenuIntegration().getModConfigScreenFactory().create(null));
+			context.setScreen(() -> new ChatterConfigScreen(null));
 			context.waitForScreen(ChatterConfigScreen.class);
 			context.takeScreenshot("lvc-config-default");
 
@@ -122,9 +126,6 @@ public class ChatterClientGameTest implements FabricClientGameTest {
 			check(ChatterConfig.traderInterval == ChatterConfig.DEFAULT_TRADER, "reset trader " + ChatterConfig.traderInterval);
 			context.clickScreenButton("gui.done");
 
-			context.setScreen(() -> ModMenuApi.createModsScreen(null));
-			context.waitTicks(5);
-			context.takeScreenshot("lvc-modmenu-list");
 			context.setScreen(() -> null);
 		}
 	}

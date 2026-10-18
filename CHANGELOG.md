@@ -3,6 +3,7 @@
 ## 1.0.1
 
 - Author name changed to SasnycoN. No gameplay changes.
+- NeoForge build added, with the same features as the Fabric one. The settings are under Mods > Config.
 
 ## 1.0.0
 

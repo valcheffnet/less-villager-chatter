@@ -41,3 +41,4 @@ replay_*.log
 
 # local only
 art/source-screenshot.png
+run-smoketest/

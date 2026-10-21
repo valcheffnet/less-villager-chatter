@@ -9,7 +9,7 @@
 
 First release, for Minecraft 26.3 on Fabric.
 
-- Longer silence between idle "hmm" sounds, separately for villagers and the wandering trader.
+- Longer silence between idle "hmm" sounds, seperately for villagers and the wandering trader.
 - Random start and variation, so villagers don't "hmm" in step.
 - Volume for villager and trader sounds, set by the server for everyone, with an optional per-player override.
 - Settings screen through Mod Menu.

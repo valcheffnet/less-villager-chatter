@@ -6,6 +6,8 @@ A trading hall with twenty villagers is loud. Each one says "hmm" about every 6 
 
 It runs on the server. Players join with a normal vanilla client and install nothing.
 
+**Download 1.0.1:** [Fabric jar](https://github.com/valcheffnet/less-villager-chatter/releases/download/v1.0.1/less-villager-chatter-1.0.1.jar), [NeoForge jar](https://github.com/valcheffnet/less-villager-chatter/releases/download/v1.0.1-neoforge/less-villager-chatter-neoforge-1.0.1.jar). Older versions are on the [releases page](https://github.com/valcheffnet/less-villager-chatter/releases), and the mod is also on [CurseForge](https://www.curseforge.com/minecraft/mc-mods/less-villager-chatter) and [Modrinth](https://modrinth.com/mod/less-villager-chatter).
+
 ## What it changes
 
 In vanilla, a villager waits at least 4 seconds after each idle "hmm", then the chance of the next one grows every tick. That averages out to one sound every 6 seconds. The mod makes the wait longer:
@@ -26,7 +28,7 @@ Other mobs are left alone. Work sounds and the yes/no sounds while trading still
 
 ## Singleplayer
 
-On NeoForge, open Mods, select Less Villager Chatter and press Config. On Fabric, install [Mod Menu](https://modrinth.com/mod/modmenu) first, then do the same through its Mods screen. Changes apply right away. Without a settings screen the mod works the same and reads its config file.
+On NeoForge, open Mods, select Less Villager Chatter and press Config. On Fabric, install [Mod Menu](https://modrinth.com/mod/modmenu) first, then do the same through its Mods screen. Chnages apply right away. Without a settings screen the mod works the same and reads its config file.
 
 ![Settings screen](art/config-screen.png)
 

@@ -8,6 +8,8 @@ It runs on the server. Players join with a normal vanilla client and install not
 
 **Download 1.0.1:** [Fabric jar](https://github.com/valcheffnet/less-villager-chatter/releases/download/v1.0.1/less-villager-chatter-1.0.1.jar), [NeoForge jar](https://github.com/valcheffnet/less-villager-chatter/releases/download/v1.0.1-neoforge/less-villager-chatter-neoforge-1.0.1.jar). Older versions are on the [releases page](https://github.com/valcheffnet/less-villager-chatter/releases), and the mod is also on [CurseForge](https://www.curseforge.com/minecraft/mc-mods/less-villager-chatter) and [Modrinth](https://modrinth.com/mod/less-villager-chatter).
 
+**Bugs or ideas?** Open an [issue](https://github.com/valcheffnet/less-villager-chatter/issues) here, or come to [Discord](https://discord.com/invite/X6yxJpk9Fz) if you'd rather just talk.
+
 ## What it changes
 
 In vanilla, a villager waits at least 4 seconds after each idle "hmm", then the chance of the next one grows every tick. That averages out to one sound every 6 seconds. The mod makes the wait longer:

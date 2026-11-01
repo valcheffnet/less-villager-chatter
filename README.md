@@ -6,7 +6,7 @@ A trading hall with twenty villagers is loud. Each one says "hmm" about every 6 
 
 It runs on the server. Players join with a normal vanilla client and install nothing.
 
-**Download 1.0.1:** [Fabric jar](https://github.com/valcheffnet/less-villager-chatter/releases/download/v1.0.1/less-villager-chatter-1.0.1.jar), [NeoForge jar](https://github.com/valcheffnet/less-villager-chatter/releases/download/v1.0.1-neoforge/less-villager-chatter-neoforge-1.0.1.jar). Older versions are on the [releases page](https://github.com/valcheffnet/less-villager-chatter/releases), and the mod is also on [CurseForge](https://www.curseforge.com/minecraft/mc-mods/less-villager-chatter) and [Modrinth](https://modrinth.com/mod/less-villager-chatter).
+**Download 1.0.2:** the [v1.0.2 release](https://github.com/valcheffnet/less-villager-chatter/releases/tag/v1.0.2) has a jar for each loader and Minecraft version, named `less-villager-chatter-<loader>-<minecraft>-1.0.2.jar`. Older versions are on the [releases page](https://github.com/valcheffnet/less-villager-chatter/releases), and the mod is also on [CurseForge](https://www.curseforge.com/minecraft/mc-mods/less-villager-chatter) and [Modrinth](https://modrinth.com/mod/less-villager-chatter).
 
 **Bugs or ideas?** Open an [issue](https://github.com/valcheffnet/less-villager-chatter/issues) here, or come to [Discord](https://discord.com/invite/X6yxJpk9Fz) if you'd rather just talk.
 
@@ -60,23 +60,28 @@ The server's volume reaches vanilla clients through the sound packets. The hurt 
 
 With the mod on your client, turn on "Use my volume on every server". From then on you hear villagers and traders at your own volume on every server, whether it runs the mod or not.
 
-## Requirements
+## Versions
 
-- Minecraft 26.3
-- Fabric: Fabric Loader 0.19 or newer. Fabric API is not needed. Mod Menu is optional, only for the settings screen.
-- NeoForge: NeoForge 26.3.0.90 or newer.
-- Java 25
+| Minecraft | Loaders | Java |
+|---|---|---|
+| 1.20.1 | Fabric, Forge | 17 |
+| 1.21.1 | Fabric, NeoForge | 21 |
+| 1.21.11 | Fabric, NeoForge | 21 |
+| 26.1.2 | Fabric, NeoForge | 25 |
+| 26.2 | Fabric, NeoForge | 25 |
+| 26.3 | Fabric, NeoForge | 25 |
+
+Pick the file for your Minecraft version and loader. On Fabric, Fabric API is not needed and Mod Menu is optional, only for the settings screen.
 
 ## Building from source
 
 ```
 ./gradlew build
-./gradlew -p neoforge build
 ```
 
-The Fabric jar ends up in `build/libs`, the NeoForge jar in `neoforge/build/libs`. Both are built from the same sources.
-`./gradlew runClientGameTest` starts a real Fabric client, creates a singleplayer world and checks the mod in it.
-`./gradlew -p neoforge runSmokeTest` starts a NeoForge dedicated server, checks the mod and exits.
+Every loader and Minecraft version is its own Gradle project under `versions/` (for example `versions/fabric-1.20.1`), built from the same sources in `src/`. The few places where Minecraft changed between versions live in `compat/`. Each jar ends up in `versions/<loader>-<minecraft>/build/libs`.
+
+`./gradlew :fabric-1.20.1:runSmokeTest` starts a dedicated server for that target, checks the mod and exits; every target has it. For the obfuscated versions (1.21.11 and older), `prodSmokeTest` runs the same checks on a real Fabric or Forge server with the release jar. `runClientSmokeTest` starts a client, opens the settings screen the way the loader's mod list does, moves the sliders, checks the saved config and the client volume option, takes two screenshots and exits. `./gradlew :fabric-26.3:runClientGameTest` also creates a singleplayer world and checks the mod there.
 
 ## License
 

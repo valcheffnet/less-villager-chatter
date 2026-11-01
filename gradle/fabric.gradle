@@ -1,0 +1,169 @@
+// Fabric targets. Minecraft up to 1.21.11 is obfuscated: those use fabric-loom-remap with Mojang's mappings.
+apply plugin: (project.remap.toBoolean() ? 'net.fabricmc.fabric-loom-remap' : 'net.fabricmc.fabric-loom')
+apply from: rootProject.file('gradle/common.gradle')
+
+def remap = project.remap.toBoolean()
+def clientGameTest = (project.findProperty('client_gametest') ?: 'false').toBoolean()
+
+loom {
+	splitEnvironmentSourceSets()
+}
+
+sourceSets {
+	main {
+		java.srcDirs = commonMainJava
+		resources.srcDirs = commonMainResources
+	}
+	client {
+		java.srcDirs = commonClientJava
+		resources.srcDirs = commonClientResources
+	}
+	// A second mod, loaded only by runSmokeTest and runClientSmokeTest: starts a dedicated server or a client,
+	// checks the mod, then exits.
+	smoketest {
+		java.srcDirs = smokeTestJava
+		resources.srcDirs = smokeTestResources
+		compileClasspath += main.compileClasspath + main.output + client.compileClasspath + client.output
+		runtimeClasspath += main.runtimeClasspath + main.output + client.runtimeClasspath + client.output
+	}
+}
+
+loom {
+	mods {
+		lessvillagerchatter {
+			sourceSet sourceSets.main
+			sourceSet sourceSets.client
+		}
+		lessvillagerchattertest {
+			sourceSet sourceSets.smoketest
+		}
+	}
+
+	runs {
+		smokeTest {
+			server()
+			name 'Smoke Test'
+			source sourceSets.smoketest
+			runDir 'run-smoketest'
+		}
+		clientSmokeTest {
+			client()
+			name 'Client Smoke Test'
+			source sourceSets.smoketest
+			runDir 'run-client-smoketest'
+		}
+	}
+}
+
+repositories {
+	maven {
+		name = 'TerraformersMC'
+		url = 'https://maven.terraformersmc.com/releases/'
+	}
+}
+
+dependencies {
+	minecraft "com.mojang:minecraft:${project.minecraft_version}"
+	if (remap) {
+		mappings loom.officialMojangMappings()
+		modImplementation "net.fabricmc:fabric-loader:${project.fabric_loader_version}"
+		// Optional: Mod Menu shows the settings button. Not bundled, not required.
+		modClientCompileOnly "com.terraformersmc:modmenu:${project.modmenu_version}"
+		// The dev runs get Mod Menu and the Fabric API it needs; the client smoke test opens the settings through it.
+		// Loom then adds Fabric API interfaces to Minecraft's classes, so the mod compiles against Fabric API too,
+		// without using it.
+		modCompileOnly "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+		modLocalRuntime "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+		modLocalRuntime "com.terraformersmc:modmenu:${project.modmenu_version}"
+	} else {
+		implementation "net.fabricmc:fabric-loader:${project.fabric_loader_version}"
+		clientCompileOnly "com.terraformersmc:modmenu:${project.modmenu_version}"
+		compileOnly "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+		localRuntime "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+		localRuntime "com.terraformersmc:modmenu:${project.modmenu_version}"
+	}
+}
+
+def smokeDir = project.file('run-smoketest')
+tasks.matching { it.name == 'runSmokeTest' }.configureEach {
+	doFirst {
+		smokeDir.mkdirs()
+		new File(smokeDir, 'eula.txt').text = 'eula=true\n'
+		new File(smokeDir, 'server.properties').text = 'online-mode=false\nspawn-protection=0\nserver-port=25690\n'
+	}
+}
+
+// Fail the build unless the server wrote a passing result (it halts itself right after the checks).
+def smokeResult = new File(smokeDir, 'lvc-smoketest-result.txt')
+tasks.matching { it.name == 'runSmokeTest' }.configureEach {
+	doFirst { smokeResult.delete() }
+	doLast {
+		if (!smokeResult.exists() || !smokeResult.text.startsWith('LVC-SMOKETEST PASSED')) {
+			throw new GradleException("Smoke test did not pass: " + (smokeResult.exists() ? smokeResult.text : 'the server never reached the checks'))
+		}
+	}
+}
+
+// The client smoke test (./gradlew :fabric-1.20.1:runClientSmokeTest) starts from default settings, muted, and
+// fails the build unless the client wrote a passing result.
+def clientDir = project.file('run-client-smoketest')
+def clientResult = new File(clientDir, 'lvc-client-smoketest-result.txt')
+def clientOptions = clientSmokeOptions
+tasks.matching { it.name == 'runClientSmokeTest' }.configureEach {
+	doFirst {
+		clientDir.mkdirs()
+		clientResult.delete()
+		new File(clientDir, 'config/lessvillagerchatter.properties').delete()
+		new File(clientDir, 'options.txt').text = clientOptions
+	}
+	doLast {
+		if (!clientResult.exists() || !clientResult.text.startsWith('LVC-CLIENT-SMOKETEST PASSED')) {
+			throw new GradleException("Client smoke test did not pass: " + (clientResult.exists() ? clientResult.text : 'the client never reached the checks'))
+		}
+	}
+}
+
+// Obfuscated Minecraft only: run the same checks on a real Fabric server with the remapped jars
+// (./gradlew :fabric-1.20.1:prodSmokeTest), to catch anything the dev environment's readable names would hide.
+if (remap) {
+	// Script plugins do not see Loom's classes by name; load them through the plugin's class loader.
+	def loomClasses = plugins.getPlugin('net.fabricmc.fabric-loom-remap').class.classLoader
+	def remapJarTask = loomClasses.loadClass('net.fabricmc.loom.task.RemapJarTask')
+	def serverRunTask = loomClasses.loadClass('net.fabricmc.loom.task.prod.ServerProductionRunTask')
+
+	def smokeDevJar = tasks.register('smokeTestDevJar', Jar) {
+		from sourceSets.smoketest.output
+		archiveClassifier = 'smoketest-dev'
+		destinationDirectory = layout.buildDirectory.dir('devlibs')
+	}
+	def smokeJar = tasks.register('remapSmokeTestJar', remapJarTask) {
+		inputFile = smokeDevJar.flatMap { it.archiveFile }
+		archiveClassifier = 'smoketest'
+		destinationDirectory = layout.buildDirectory.dir('smoketest')
+	}
+	def prodDir = project.file('run-prod-smoketest')
+	def prodResult = new File(prodDir, 'lvc-smoketest-result.txt')
+	tasks.register('prodSmokeTest', serverRunTask) {
+		installerVersion = '1.1.2'
+		mods.from(tasks.named('remapJar'))
+		mods.from(smokeJar)
+		programArgs.add('nogui')
+		runDir = prodDir
+		javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(javaRelease) }
+		doFirst {
+			prodDir.mkdirs()
+			prodResult.delete()
+			new File(prodDir, 'eula.txt').text = 'eula=true\n'
+			new File(prodDir, 'server.properties').text = 'online-mode=false\nspawn-protection=0\nserver-port=25690\n'
+		}
+		doLast {
+			if (!prodResult.exists() || !prodResult.text.startsWith('LVC-SMOKETEST PASSED')) {
+				throw new GradleException("Production smoke test did not pass: " + (prodResult.exists() ? prodResult.text : 'the server never reached the checks'))
+			}
+		}
+	}
+}
+
+if (clientGameTest) {
+	apply from: rootProject.file('gradle/fabric-client-gametest.gradle')
+}

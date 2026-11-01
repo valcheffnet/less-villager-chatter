@@ -1,0 +1,10 @@
+{
+	"schemaVersion": 1,
+	"id": "lessvillagerchattertest",
+	"version": "1.0.0",
+	"name": "Less Villager Chatter (smoke test)",
+	"environment": "*",
+	"mixins": [
+		"lessvillagerchattertest.mixins.json"
+	]
+}

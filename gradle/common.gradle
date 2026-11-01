@@ -1,0 +1,87 @@
+// Shared by gradle/fabric.gradle, neoforge.gradle and forge.gradle. The target's gradle.properties picks:
+//   ids     resourcelocation (up to 1.21.10) or identifier (1.21.11 and newer)
+//   screen  legacy (1.20.1) or modern
+//   show    minecraft (Minecraft.setScreen, up to 26.1) or gui (Minecraft.gui.setScreen, 26.2 and newer)
+//   spawn   level (create(Level)), reason (create(Level, EntitySpawnReason)) or types (EntityTypes)
+//   testclient  legacy (widgets take raw mouse coordinates, up to 1.21.1), event (mouse events, 1.21.11 and 26.1),
+//               gui (screen in Minecraft.gui, 26.2) or sdl (SDL window, 26.3 and newer); used by the client smoke test
+
+def root = rootProject.projectDir
+
+version = rootProject.version
+group = rootProject.group
+
+base {
+	archivesName = "less-villager-chatter-${project.loader}-${project.minecraft_version}"
+}
+
+ext.javaRelease = project.java_version as int
+java.toolchain.languageVersion = JavaLanguageVersion.of(javaRelease)
+
+tasks.withType(JavaCompile).configureEach {
+	options.encoding = 'UTF-8'
+	options.release = javaRelease
+}
+
+// Source folders for the main mod; loaders without split client sources put both sides in main.
+ext.commonMainJava = [
+	new File(root, 'src/main/java'),
+	new File(root, "compat/ids-${project.ids}/main/java"),
+	new File(root, "loaders/${project.loader}/src/main/java"),
+]
+ext.commonClientJava = [
+	new File(root, 'src/client/java'),
+	new File(root, "compat/ids-${project.ids}/client/java"),
+	new File(root, "compat/screen-${project.screen}/client/java"),
+	new File(root, "compat/show-${project.show}/client/java"),
+	new File(root, "loaders/${project.loader}/src/client/java"),
+]
+ext.commonMainResources = [
+	new File(root, 'src/main/resources'),
+	new File(root, "loaders/${project.loader}/src/main/resources"),
+]
+ext.commonClientResources = [
+	new File(root, 'src/client/resources'),
+]
+ext.smokeTestJava = [
+	new File(root, 'smoketest/common/java'),
+	new File(root, "smoketest/spawn-${project.spawn}/java"),
+	new File(root, "smoketest/client-${project.testclient}/java"),
+	new File(root, "smoketest/${project.loader}/java"),
+]
+ext.smokeTestResources = [
+	new File(root, 'smoketest/common/resources'),
+	new File(root, "smoketest/${project.loader}/resources"),
+]
+
+ext.templateProps = [
+	version          : project.version,
+	minecraft_version: project.minecraft_version,
+	java_version     : project.java_version,
+	minecraft_dep    : project.minecraft_dep,
+	loader_dep       : project.findProperty('loader_dep') ?: '',
+	// NeoForge 26.2 warns on start about logoFile and wants iconFile for a square icon; older versions only know logoFile.
+	icon_key         : project.findProperty('icon_key') ?: 'logoFile',
+	// Forge needs the refmap named in the mixin configs; Fabric's Loom adds it itself, NeoForge needs none.
+	refmap           : project.loader == 'forge' ? '\n\t"refmap": "lessvillagerchatter.refmap.json",' : '',
+	refmap_test      : project.loader == 'forge' ? '\n\t"refmap": "lessvillagerchattertest.refmap.json",' : '',
+]
+
+// The client smoke test starts muted (title music plays before the checks run) and without the first-launch
+// accessibility screen, from the default settings.
+ext.clientSmokeOptions = 'soundCategory_master:0.0\nsoundCategory_music:0.0\nonboardAccessibility:false\nnarrator:0\n'
+
+def expandProps = templateProps
+tasks.withType(ProcessResources).configureEach {
+	inputs.properties expandProps
+	filesMatching(['fabric.mod.json', '*.mixins.json', 'META-INF/*.toml']) {
+		expand expandProps
+	}
+}
+
+def license = new File(root, 'LICENSE.md')
+tasks.named('jar') {
+	from(license) {
+		rename { 'LICENSE_less-villager-chatter.md' }
+	}
+}

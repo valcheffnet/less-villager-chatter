@@ -1,91 +1,11 @@
+// Every loader plugin is declared here once and applied per subproject (see versions/ and gradle/).
 plugins {
-	id 'net.fabricmc.fabric-loom' version "${loom_version}"
+	id 'net.fabricmc.fabric-loom' apply false
+	id 'net.fabricmc.fabric-loom-remap' apply false
+	id 'net.neoforged.moddev' apply false
+	id 'net.neoforged.moddev.legacyforge' apply false
 }
 
-base {
-	archivesName = 'less-villager-chatter'
-}
-
-repositories {
-	maven {
-		name = 'TerraformersMC'
-		url = 'https://maven.terraformersmc.com/releases/'
-	}
-}
-
-loom {
-	splitEnvironmentSourceSets()
-
-	mods {
-		"lessvillagerchatter" {
-			sourceSet sourceSets.main
-			sourceSet sourceSets.client
-		}
-	}
-}
-
-fabricApi {
-	configureTests {
-		createSourceSet = true
-		modId = "lessvillagerchatter-test"
-		enableGameTests = false
-		enableClientGameTests = true
-		eula = true
-	}
-}
-
-dependencies {
-	minecraft "com.mojang:minecraft:${project.minecraft_version}"
-	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
-
-	// Compile only: Loom injects Fabric API interfaces into Minecraft classes once Fabric API is on any
-	// classpath (it is for the game test), and javac then needs them. The mod does not use or need Fabric API.
-	compileOnly "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
-	clientCompileOnly "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
-
-	// Optional: Mod Menu shows the config screen button. Not bundled, not required.
-	clientCompileOnly "com.terraformersmc:modmenu:${project.modmenu_version}"
-
-	// Client game test only (./gradlew runClientGameTest). Mod Menu is left out so the test does not depend on it.
-	gametestImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
-
-	// Dev client (./gradlew runClient) gets Mod Menu so the config screen can be opened.
-	localRuntime "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
-	localRuntime "com.terraformersmc:modmenu:${project.modmenu_version}"
-}
-
-// Versions live in gradle.properties.
-def templateProps = [
-	version          : project.version,
-	minecraft_version: project.minecraft_version,
-	java_version     : project.java_version,
-]
-
-processResources {
-	inputs.properties templateProps
-	filesMatching(["fabric.mod.json", "*.mixins.json"]) {
-		expand templateProps
-	}
-}
-
-processClientResources {
-	inputs.properties templateProps
-	filesMatching("*.mixins.json") {
-		expand templateProps
-	}
-}
-
-tasks.withType(JavaCompile).configureEach {
-	it.options.release = project.java_version as int
-}
-
-java {
-	sourceCompatibility = JavaVersion.toVersion(project.java_version)
-	targetCompatibility = JavaVersion.toVersion(project.java_version)
-}
-
-jar {
-	from("LICENSE.md") {
-		rename { "LICENSE_less-villager-chatter.md" }
-	}
+subprojects {
+	apply from: rootProject.file("gradle/${project.loader}.gradle")
 }

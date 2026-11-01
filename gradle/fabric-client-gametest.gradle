@@ -1,0 +1,35 @@
+// Fabric client game test (./gradlew :fabric-26.3:runClientGameTest): a real client checks the settings screen and
+// the mixins in a singleplayer world. Needs Fabric API, which only the test uses; the mod itself does not.
+
+def gametestRoot = new File(rootProject.projectDir, 'src/gametest')
+
+fabricApi {
+	configureTests {
+		createSourceSet = true
+		modId = 'lessvillagerchatter-test'
+		enableGameTests = false
+		enableClientGameTests = true
+		eula = true
+	}
+}
+
+sourceSets {
+	gametest {
+		java.srcDirs = [new File(gametestRoot, 'java')]
+		resources.srcDirs = [new File(gametestRoot, 'resources')]
+	}
+}
+
+// Start the test client silent: the title screen music begins before the test itself runs. The run folder is
+// wiped before every run, so write the options right before the client starts.
+def gameTestDir = project.layout.buildDirectory.dir('run/clientGameTest').get().asFile
+tasks.matching { it.name == 'runClientGameTest' }.configureEach {
+	doFirst {
+		gameTestDir.mkdirs()
+		new File(gameTestDir, 'options.txt').text = 'soundCategory_master:0.0\nsoundCategory_music:0.0\n'
+	}
+}
+
+dependencies {
+	gametestImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+}

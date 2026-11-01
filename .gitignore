@@ -42,3 +42,5 @@ replay_*.log
 # local only
 art/source-screenshot.png
 run-smoketest/
+run-prod-smoketest/
+run-client-smoketest/

@@ -1,0 +1,21 @@
+{
+	"required": true,
+	"minVersion": "0.8",
+	"package": "net.valcheff.lessvillagerchatter.smoketest.mixin",
+	"compatibilityLevel": "JAVA_${java_version}",${refmap_test}
+	"mixins": [
+		"LivingEntityAccess",
+		"MobAccess"
+	],
+	"server": [
+		"DedicatedServerMixin"
+	],
+	"client": [
+		"MinecraftMixin",
+		"SoundEngineAccess",
+		"SoundManagerAccess"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}

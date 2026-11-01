@@ -2,9 +2,9 @@ package net.valcheff.lessvillagerchatter.client.mixin;
 
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.client.sounds.SoundEngine;
-import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundSource;
 import net.valcheff.lessvillagerchatter.ChatterConfig;
+import net.valcheff.lessvillagerchatter.compat.SoundIds;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -23,11 +23,11 @@ public abstract class SoundEngineMixin {
 	@Inject(method = "calculateVolume(Lnet/minecraft/client/resources/sounds/SoundInstance;)F", at = @At("HEAD"), cancellable = true)
 	private void lessvillagerchatter$ownVolume(SoundInstance sound, CallbackInfoReturnable<Float> cir) {
 		if (!ChatterConfig.useOwnVolume) return;
-		Identifier id = sound.getIdentifier();
-		if (!"minecraft".equals(id.getNamespace())) return;
+		if (!"minecraft".equals(SoundIds.namespace(sound))) return;
+		String path = SoundIds.path(sound);
 		int percent;
-		if (id.getPath().startsWith("entity.villager.")) percent = ChatterConfig.villagerVolume;
-		else if (id.getPath().startsWith("entity.wandering_trader.")) percent = ChatterConfig.traderVolume;
+		if (path.startsWith("entity.villager.")) percent = ChatterConfig.villagerVolume;
+		else if (path.startsWith("entity.wandering_trader.")) percent = ChatterConfig.traderVolume;
 		else return;
 
 		float volume = sound.getVolume();

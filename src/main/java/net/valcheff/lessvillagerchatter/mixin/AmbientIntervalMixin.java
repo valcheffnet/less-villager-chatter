@@ -2,10 +2,9 @@ package net.valcheff.lessvillagerchatter.mixin;
 
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
-import net.minecraft.world.entity.npc.villager.Villager;
-import net.minecraft.world.entity.npc.wanderingtrader.WanderingTrader;
 import net.minecraft.world.level.Level;
 import net.valcheff.lessvillagerchatter.ChatterConfig;
+import net.valcheff.lessvillagerchatter.compat.Mobs;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -51,8 +50,8 @@ public class AmbientIntervalMixin {
 	}
 
 	private static int lessvillagerchatter$intervalFor(Object mob) {
-		if (mob instanceof Villager) return ChatterConfig.villagerInterval;
-		if (mob instanceof WanderingTrader) return ChatterConfig.traderInterval;
+		if (Mobs.isVillager(mob)) return ChatterConfig.villagerInterval;
+		if (Mobs.isWanderingTrader(mob)) return ChatterConfig.traderInterval;
 		return 0;
 	}
 }

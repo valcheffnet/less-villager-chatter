@@ -1,0 +1,190 @@
+import java.util.concurrent.TimeUnit
+
+// Forge targets (1.20.1). Forge runs on SRG names outside the dev environment, so the mixins get a refmap and
+// the jar is reobfuscated.
+apply plugin: 'java-library'
+apply plugin: 'net.neoforged.moddev.legacyforge'
+apply from: rootProject.file('gradle/common.gradle')
+
+sourceSets {
+	main {
+		java.srcDirs = commonMainJava + commonClientJava
+		resources.srcDirs = commonMainResources + commonClientResources
+	}
+	// A second mod, loaded only by runSmokeTest and runClientSmokeTest: starts a dedicated server or a client,
+	// checks the mod, then exits.
+	smoketest {
+		java.srcDirs = smokeTestJava
+		resources.srcDirs = smokeTestResources
+		compileClasspath += main.output
+		runtimeClasspath += main.output
+	}
+}
+
+legacyForge {
+	version = "${project.minecraft_version}-${project.forge_version}"
+
+	addModdingDependenciesTo sourceSets.smoketest
+
+	mods {
+		lessvillagerchatter {
+			sourceSet sourceSets.main
+		}
+		lessvillagerchattertest {
+			sourceSet sourceSets.smoketest
+		}
+	}
+
+	runs {
+		client {
+			client()
+		}
+		server {
+			server()
+			programArgument '--nogui'
+		}
+		smokeTest {
+			server()
+			programArgument '--nogui'
+			// Forge 47 has no [[mixins]] in mods.toml; the test mod's config is passed on the command line.
+			programArguments.addAll '--mixin.config', 'lessvillagerchattertest.mixins.json'
+			gameDirectory = project.file('run-smoketest')
+			loadedMods = [mods.lessvillagerchatter, mods.lessvillagerchattertest]
+		}
+		clientSmokeTest {
+			client()
+			programArguments.addAll '--mixin.config', 'lessvillagerchattertest.mixins.json'
+			gameDirectory = project.file('run-client-smoketest')
+			loadedMods = [mods.lessvillagerchatter, mods.lessvillagerchattertest]
+		}
+	}
+}
+
+mixin {
+	add sourceSets.main, 'lessvillagerchatter.refmap.json'
+	add sourceSets.smoketest, 'lessvillagerchattertest.refmap.json'
+	config 'lessvillagerchatter.mixins.json'
+	config 'lessvillagerchatter.client.mixins.json'
+}
+
+dependencies {
+	annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
+	smoketestAnnotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
+}
+
+// The mixin plugin hands every source set's refmap mappings to reobfJar, the test mod's included.
+tasks.named('reobfJar') {
+	dependsOn 'compileSmoketestJava'
+}
+
+// Forge 47 finds a mod's mixin configs only through this manifest entry.
+tasks.named('jar') {
+	manifest.attributes('MixinConfigs': 'lessvillagerchatter.mixins.json,lessvillagerchatter.client.mixins.json')
+}
+
+def smokeDir = project.file('run-smoketest')
+tasks.named('prepareSmokeTestRun') {
+	doFirst {
+		smokeDir.mkdirs()
+		new File(smokeDir, 'eula.txt').text = 'eula=true\n'
+		new File(smokeDir, 'server.properties').text = 'online-mode=false\nspawn-protection=0\nserver-port=25690\n'
+	}
+}
+
+// Fail the build unless the server wrote a passing result (it halts itself right after the checks).
+def smokeResult = new File(smokeDir, 'lvc-smoketest-result.txt')
+tasks.matching { it.name == 'runSmokeTest' }.configureEach {
+	doFirst { smokeResult.delete() }
+	doLast {
+		if (!smokeResult.exists() || !smokeResult.text.startsWith('LVC-SMOKETEST PASSED')) {
+			throw new GradleException("Smoke test did not pass: " + (smokeResult.exists() ? smokeResult.text : 'the server never reached the checks'))
+		}
+	}
+}
+
+// The client smoke test (./gradlew :forge-1.20.1:runClientSmokeTest) starts from default settings, muted,
+// and fails the build unless the client wrote a passing result.
+def clientDir = project.file('run-client-smoketest')
+def clientResult = new File(clientDir, 'lvc-client-smoketest-result.txt')
+def clientOptions = clientSmokeOptions
+tasks.named('prepareClientSmokeTestRun') {
+	doFirst {
+		clientDir.mkdirs()
+		clientResult.delete()
+		new File(clientDir, 'config/lessvillagerchatter.properties').delete()
+		new File(clientDir, 'options.txt').text = clientOptions
+	}
+}
+tasks.matching { it.name == 'runClientSmokeTest' }.configureEach {
+	doLast {
+		if (!clientResult.exists() || !clientResult.text.startsWith('LVC-CLIENT-SMOKETEST PASSED')) {
+			throw new GradleException("Client smoke test did not pass: " + (clientResult.exists() ? clientResult.text : 'the client never reached the checks'))
+		}
+	}
+}
+
+// Run the same checks on a real Forge server with the reobfuscated jars (./gradlew :forge-1.20.1:prodSmokeTest),
+// to catch anything the dev environment's readable names would hide. Installs the server once into
+// build/prod-server with the official Forge installer. Both processes write to log files there: an inherited
+// console that nobody reads fills up and blocks them.
+def smokeDevJar = tasks.register('smokeTestJar', Jar) {
+	from sourceSets.smoketest.output
+	// The mixin plugin writes this refmap outside the source set's output.
+	from(layout.buildDirectory.file('mixin/lessvillagerchattertest.refmap.json'))
+	dependsOn 'compileSmoketestJava'
+	archiveClassifier = 'smoketest-dev'
+	destinationDirectory = layout.buildDirectory.dir('devlibs')
+	manifest.attributes('MixinConfigs': 'lessvillagerchattertest.mixins.json')
+}
+// The main source set's classpath holds Minecraft, which is all the remapping needs.
+def smokeJar = obfuscation.reobfuscate(smokeDevJar, sourceSets.main) {
+	archiveClassifier = 'smoketest'
+	destinationDirectory = layout.buildDirectory.dir('smoketest')
+}
+
+def forgeFull = "${project.minecraft_version}-${project.forge_version}"
+def prodServer = project.layout.buildDirectory.dir('prod-server').get().asFile
+def installerUrl = "https://maven.minecraftforge.net/net/minecraftforge/forge/${forgeFull}/forge-${forgeFull}-installer.jar"
+def java17 = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(javaRelease) }
+def modJar = tasks.named('reobfJar').flatMap { it.archiveFile }
+def testJar = smokeJar.flatMap { it.archiveFile }
+
+tasks.register('prodSmokeTest') {
+	dependsOn 'reobfJar', smokeJar
+	def javaExe = java17.map { it.executablePath.asFile.absolutePath }
+	doLast {
+		def java = javaExe.get()
+		def argsFile = new File(prodServer, "libraries/net/minecraftforge/forge/${forgeFull}/win_args.txt")
+		if (!argsFile.exists()) {
+			prodServer.mkdirs()
+			def installer = new File(prodServer, 'installer.jar')
+			new URL(installerUrl).withInputStream { input -> installer.withOutputStream { it << input } }
+			def install = new ProcessBuilder(java, '-jar', installer.absolutePath, '--installServer', prodServer.absolutePath)
+					.directory(prodServer).redirectErrorStream(true)
+					.redirectOutput(new File(prodServer, 'installer-output.log')).start()
+			if (!install.waitFor(15, TimeUnit.MINUTES)) {
+				install.destroyForcibly()
+				throw new GradleException('Forge installer did not finish in 15 minutes')
+			}
+			if (install.exitValue() != 0) throw new GradleException('Forge installer failed')
+		}
+		def mods = new File(prodServer, 'mods')
+		mods.mkdirs()
+		mods.listFiles().each { it.delete() }
+		[modJar.get().asFile, testJar.get().asFile].each { jar -> new File(mods, jar.name).bytes = jar.bytes }
+		new File(prodServer, 'eula.txt').text = 'eula=true\n'
+		new File(prodServer, 'server.properties').text = 'online-mode=false\nspawn-protection=0\nserver-port=25690\n'
+		def result = new File(prodServer, 'lvc-smoketest-result.txt')
+		result.delete()
+		def server = new ProcessBuilder(java, "@libraries/net/minecraftforge/forge/${forgeFull}/win_args.txt", 'nogui')
+				.directory(prodServer).redirectErrorStream(true)
+				.redirectOutput(new File(prodServer, 'server-output.log')).start()
+		server.outputStream.close()
+		if (!server.waitFor(10, TimeUnit.MINUTES)) {
+			server.destroyForcibly()
+		}
+		if (!result.exists() || !result.text.startsWith('LVC-SMOKETEST PASSED')) {
+			throw new GradleException("Production smoke test did not pass: " + (result.exists() ? result.text : 'the server never reached the checks'))
+		}
+	}
+}

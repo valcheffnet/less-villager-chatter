@@ -1,0 +1,96 @@
+// NeoForge targets (1.21.1 and newer). NeoForge runs on Mojang's names, so the mixins need no refmap.
+apply plugin: 'java-library'
+apply plugin: 'net.neoforged.moddev'
+apply from: rootProject.file('gradle/common.gradle')
+
+sourceSets {
+	main {
+		java.srcDirs = commonMainJava + commonClientJava
+		resources.srcDirs = commonMainResources + commonClientResources
+	}
+	// A second mod, loaded only by runSmokeTest and runClientSmokeTest: starts a dedicated server or a client,
+	// checks the mod, then exits.
+	smoketest {
+		java.srcDirs = smokeTestJava
+		resources.srcDirs = smokeTestResources
+		compileClasspath += main.output
+		runtimeClasspath += main.output
+	}
+}
+
+neoForge {
+	version = project.neo_version
+
+	addModdingDependenciesTo sourceSets.smoketest
+
+	mods {
+		lessvillagerchatter {
+			sourceSet sourceSets.main
+		}
+		lessvillagerchattertest {
+			sourceSet sourceSets.smoketest
+		}
+	}
+
+	runs {
+		client {
+			client()
+		}
+		server {
+			server()
+			programArgument '--nogui'
+		}
+		smokeTest {
+			server()
+			programArgument '--nogui'
+			gameDirectory = project.file('run-smoketest')
+			loadedMods = [mods.lessvillagerchatter, mods.lessvillagerchattertest]
+		}
+		clientSmokeTest {
+			client()
+			gameDirectory = project.file('run-client-smoketest')
+			loadedMods = [mods.lessvillagerchatter, mods.lessvillagerchattertest]
+		}
+	}
+}
+
+def smokeDir = project.file('run-smoketest')
+tasks.named('prepareSmokeTestRun') {
+	doFirst {
+		smokeDir.mkdirs()
+		new File(smokeDir, 'eula.txt').text = 'eula=true\n'
+		new File(smokeDir, 'server.properties').text = 'online-mode=false\nspawn-protection=0\nserver-port=25690\n'
+	}
+}
+
+// Fail the build unless the server wrote a passing result (it halts itself right after the checks).
+def smokeResult = new File(smokeDir, 'lvc-smoketest-result.txt')
+tasks.matching { it.name == 'runSmokeTest' }.configureEach {
+	doFirst { smokeResult.delete() }
+	doLast {
+		if (!smokeResult.exists() || !smokeResult.text.startsWith('LVC-SMOKETEST PASSED')) {
+			throw new GradleException("Smoke test did not pass: " + (smokeResult.exists() ? smokeResult.text : 'the server never reached the checks'))
+		}
+	}
+}
+
+// The client smoke test (./gradlew :neoforge-1.21.1:runClientSmokeTest) starts from default settings, muted,
+// and fails the build unless the client wrote a passing result.
+def clientDir = project.file('run-client-smoketest')
+def clientResult = new File(clientDir, 'lvc-client-smoketest-result.txt')
+def clientOptions = clientSmokeOptions
+tasks.named('prepareClientSmokeTestRun') {
+	doFirst {
+		clientDir.mkdirs()
+		clientResult.delete()
+		new File(clientDir, 'config/lessvillagerchatter.properties').delete()
+		new File(clientDir, 'options.txt').text = clientOptions
+	}
+}
+tasks.matching { it.name == 'runClientSmokeTest' }.configureEach {
+	doLast {
+		if (!clientResult.exists() || !clientResult.text.startsWith('LVC-CLIENT-SMOKETEST PASSED')) {
+			throw new GradleException("Client smoke test did not pass: " + (clientResult.exists() ? clientResult.text : 'the client never reached the checks'))
+		}
+	}
+}

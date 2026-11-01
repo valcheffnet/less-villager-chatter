@@ -1,9 +1,8 @@
 package net.valcheff.lessvillagerchatter.mixin;
 
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.npc.villager.Villager;
-import net.minecraft.world.entity.npc.wanderingtrader.WanderingTrader;
 import net.valcheff.lessvillagerchatter.ChatterConfig;
+import net.valcheff.lessvillagerchatter.compat.Mobs;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -18,8 +17,8 @@ public class SoundVolumeMixin {
 	private void lessvillagerchatter$quieter(CallbackInfoReturnable<Float> cir) {
 		LivingEntity self = (LivingEntity) (Object) this;
 		int percent;
-		if (self instanceof Villager) percent = ChatterConfig.villagerVolume;
-		else if (self instanceof WanderingTrader) percent = ChatterConfig.traderVolume;
+		if (Mobs.isVillager(self)) percent = ChatterConfig.villagerVolume;
+		else if (Mobs.isWanderingTrader(self)) percent = ChatterConfig.traderVolume;
 		else return;
 		if (percent != 100 && !self.level().isClientSide()) {
 			cir.setReturnValue(cir.getReturnValueF() * percent / 100f);

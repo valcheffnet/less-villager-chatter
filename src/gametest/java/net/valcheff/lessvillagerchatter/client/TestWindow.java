@@ -3,10 +3,7 @@ package net.valcheff.lessvillagerchatter.client;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.minecraft.client.Minecraft;
-import org.lwjgl.BufferUtils;
 import org.lwjgl.sdl.SDLVideo;
-
-import java.nio.IntBuffer;
 
 /**
  * Moves the test window to another monitor on the first client tick, while the game is still loading:
@@ -31,10 +28,6 @@ public class TestWindow implements ClientModInitializer {
 		long handle = mc.getWindow().handle();
 		boolean moved = SDLVideo.SDL_SetWindowPosition(handle, x, y);
 		SDLVideo.SDL_SyncWindow(handle);
-		IntBuffer nx = BufferUtils.createIntBuffer(1);
-		IntBuffer ny = BufferUtils.createIntBuffer(1);
-		SDLVideo.SDL_GetWindowPosition(handle, nx, ny);
-		System.out.println("TEST-WINDOW wanted " + x + "," + y + " moved=" + moved + " now " + nx.get(0) + "," + ny.get(0));
 		return moved;
 	}
 }

@@ -81,7 +81,6 @@ public final class ClientChecks {
 			}
 			case 3 -> {
 				Screen screen = ClientCompat.screen(mc);
-				// value = (x - (left + 4)) / (width - 8) for vanilla sliders.
 				slideTo(widget(screen, "lessvillagerchatter.config.villagers"), 0.5);
 				expect(ChatterConfig.villagerInterval == ChatterConfig.intervalForSeconds(33),
 						"villager slider at half: interval " + ChatterConfig.villagerInterval);
@@ -165,6 +164,7 @@ public final class ClientChecks {
 		return engine.lessvillagerchattertest$calculateVolume(sound);
 	}
 
+	// value = (x - (left + 4)) / (width - 8) for vanilla sliders.
 	private static void slideTo(AbstractWidget slider, double value) {
 		expect(slider instanceof AbstractSliderButton, "not a slider: " + slider);
 		ClientCompat.click(slider, slider.getX() + 4 + (slider.getWidth() - 8) * value, slider.getY() + slider.getHeight() / 2.0);

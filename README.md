@@ -30,7 +30,7 @@ Other mobs are left alone. Work sounds and the yes/no sounds while trading still
 
 ## Singleplayer
 
-On NeoForge, open Mods, select Less Villager Chatter and press Config. On Fabric, install [Mod Menu](https://modrinth.com/mod/modmenu) first, then do the same through its Mods screen. Chnages apply right away. Without a settings screen the mod works the same and reads its config file.
+On NeoForge, open Mods, select Less Villager Chatter and press Config. On Fabric, install [Mod Menu](https://modrinth.com/mod/modmenu) first, then do the same through its Mods screen. Changes apply right away. Without a settings screen the mod works the same and reads its config file.
 
 ![Settings screen](art/config-screen.png)
 

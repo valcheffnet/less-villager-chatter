@@ -4,7 +4,7 @@ import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.loading.FMLPaths;
 import net.valcheff.lessvillagerchatter.ChatterConfig;
 
-// NeoForge entrypoint. All behaviour lives in the mixins and ChatterConfig, shared with the Fabric build.
+// NeoForge entrypoint. All behaviour lives in the mixins and ChatterConfig, shared with the other loaders.
 @Mod(ChatterConfig.MOD_ID)
 public class LessVillagerChatterNeoForge {
 	public LessVillagerChatterNeoForge() {

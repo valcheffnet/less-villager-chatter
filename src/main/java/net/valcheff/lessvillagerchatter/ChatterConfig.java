@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
 
 // config/lessvillagerchatter.properties. Read once at startup; the config screen changes the values live and saves.
 // Average gap between idle sounds is roughly (interval + 40) / 20 seconds; vanilla interval is 80 (~6 s).
-// Loader independent: the Fabric and NeoForge entrypoints pass in the config folder before calling load().
+// Loader independent: each loader's entrypoint calls load() with its config folder.
 public final class ChatterConfig {
 	public static final String MOD_ID = "lessvillagerchatter";
 	public static final Logger LOG = LoggerFactory.getLogger(MOD_ID);

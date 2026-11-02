@@ -1,3 +1,5 @@
+import java.util.concurrent.TimeUnit
+
 // NeoForge targets (1.21.1 and newer). NeoForge runs on Mojang's names, so the mixins need no refmap.
 apply plugin: 'java-library'
 apply plugin: 'net.neoforged.moddev'
@@ -91,6 +93,63 @@ tasks.matching { it.name == 'runClientSmokeTest' }.configureEach {
 	doLast {
 		if (!clientResult.exists() || !clientResult.text.startsWith('LVC-CLIENT-SMOKETEST PASSED')) {
 			throw new GradleException("Client smoke test did not pass: " + (clientResult.exists() ? clientResult.text : 'the client never reached the checks'))
+		}
+	}
+}
+
+// Run the same checks on a real NeoForge server with the release jar (./gradlew :neoforge-1.21.1:prodSmokeTest),
+// to catch anything the dev environment hides: the jar's own metadata, resources and mixin config. Installs the
+// server once into build/prod-server with the official NeoForge installer. Both processes write to log files
+// there: an inherited console that nobody reads fills up and blocks them.
+def smokeJar = tasks.register('smokeTestJar', Jar) {
+	from sourceSets.smoketest.output
+	archiveClassifier = 'smoketest'
+	destinationDirectory = layout.buildDirectory.dir('smoketest')
+}
+
+def neoVersion = project.neo_version
+def prodServer = project.layout.buildDirectory.dir('prod-server').get().asFile
+def installerUrl = "https://maven.neoforged.net/releases/net/neoforged/neoforge/${neoVersion}/neoforge-${neoVersion}-installer.jar"
+def javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(javaRelease) }
+def modJar = tasks.named('jar').flatMap { it.archiveFile }
+def testJar = smokeJar.flatMap { it.archiveFile }
+
+tasks.register('prodSmokeTest') {
+	dependsOn 'jar', smokeJar
+	def javaExe = javaLauncher.map { it.executablePath.asFile.absolutePath }
+	doLast {
+		def java = javaExe.get()
+		def argsFile = new File(prodServer, "libraries/net/neoforged/neoforge/${neoVersion}/win_args.txt")
+		if (!argsFile.exists()) {
+			prodServer.mkdirs()
+			def installer = new File(prodServer, 'installer.jar')
+			new URL(installerUrl).withInputStream { input -> installer.withOutputStream { it << input } }
+			def install = new ProcessBuilder(java, '-jar', installer.absolutePath, '--installServer', prodServer.absolutePath)
+					.directory(prodServer).redirectErrorStream(true)
+					.redirectOutput(new File(prodServer, 'installer-output.log')).start()
+			if (!install.waitFor(15, TimeUnit.MINUTES)) {
+				install.destroyForcibly()
+				throw new GradleException('NeoForge installer did not finish in 15 minutes')
+			}
+			if (install.exitValue() != 0) throw new GradleException('NeoForge installer failed')
+		}
+		def mods = new File(prodServer, 'mods')
+		mods.mkdirs()
+		mods.listFiles().each { it.delete() }
+		[modJar.get().asFile, testJar.get().asFile].each { jar -> new File(mods, jar.name).bytes = jar.bytes }
+		new File(prodServer, 'eula.txt').text = 'eula=true\n'
+		new File(prodServer, 'server.properties').text = 'online-mode=false\nspawn-protection=0\nserver-port=25690\n'
+		def result = new File(prodServer, 'lvc-smoketest-result.txt')
+		result.delete()
+		def server = new ProcessBuilder(java, "@libraries/net/neoforged/neoforge/${neoVersion}/win_args.txt", 'nogui')
+				.directory(prodServer).redirectErrorStream(true)
+				.redirectOutput(new File(prodServer, 'server-output.log')).start()
+		server.outputStream.close()
+		if (!server.waitFor(10, TimeUnit.MINUTES)) {
+			server.destroyForcibly()
+		}
+		if (!result.exists() || !result.text.startsWith('LVC-SMOKETEST PASSED')) {
+			throw new GradleException("Production smoke test did not pass: " + (result.exists() ? result.text : 'the server never reached the checks'))
 		}
 	}
 }

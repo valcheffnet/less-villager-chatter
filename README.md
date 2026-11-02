@@ -81,7 +81,7 @@ Pick the file for your Minecraft version and loader. On Fabric, Fabric API is no
 
 Every loader and Minecraft version is its own Gradle project under `versions/` (for example `versions/fabric-1.20.1`), built from the same sources in `src/`. The few places where Minecraft changed between versions live in `compat/`. Each jar ends up in `versions/<loader>-<minecraft>/build/libs`.
 
-`./gradlew :fabric-1.20.1:runSmokeTest` starts a dedicated server for that target, checks the mod and exits; every target has it. For the obfuscated versions (1.21.11 and older), `prodSmokeTest` runs the same checks on a real Fabric or Forge server with the release jar. `runClientSmokeTest` starts a client, opens the settings screen the way the loader's mod list does, moves the sliders, checks the saved config and the client volume option, takes two screenshots and exits. `./gradlew :fabric-26.3:runClientGameTest` also creates a singleplayer world and checks the mod there.
+`./gradlew :fabric-1.20.1:runSmokeTest` starts a dedicated server for that target, checks the mod and exits; every target has it. `prodSmokeTest` runs the same checks on a real server with the release jar, for every NeoForge target and for the obfuscated Fabric and Forge versions (1.21.11 and older). `runClientSmokeTest` starts a client, opens the settings screen the way the loader's mod list does, moves the sliders, checks the saved config and the client volume option, takes two screenshots and exits. `./gradlew :fabric-26.3:runClientGameTest` also creates a singleplayer world and checks the mod there.
 
 ## License
 
